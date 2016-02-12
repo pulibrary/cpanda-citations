@@ -8,54 +8,58 @@
     <xsl:apply-templates/>
     <xsl:text>]</xsl:text>
   </xsl:template>
-  
+
+  <xsl:template match="*" priority="1">
+    <xsl:next-match/>
+    <xsl:if test="following-sibling::*">,</xsl:if>
+  </xsl:template>
+
   <xsl:template match="work">
     <xsl:text>{</xsl:text>
-    <xsl:apply-templates select="id"/>
-    <xsl:if test="authors|editors">,</xsl:if>
-    <xsl:apply-templates select="authors|editors"/>
-    <xsl:if test="title">,</xsl:if>
-    <xsl:apply-templates select="title"/>
-    <xsl:if test="edition">,</xsl:if>
-    <xsl:apply-templates select="edition"/>
-    <xsl:if test="keywords">,</xsl:if>
-    <xsl:apply-templates select="keywords"/>
+    <xsl:apply-templates/>
     <xsl:text>}</xsl:text>
-    <xsl:if test="following-sibling::work">,</xsl:if>
   </xsl:template>
   
   <xsl:template match="id">
-    <xsl:value-of select="local:quote('id')"/>
-    <xsl:text>: </xsl:text>
-    <xsl:value-of select="."/>
+    <xsl:value-of select="concat(local:keyify(local-name()), current())"/>
   </xsl:template>
   
   <xsl:template match="authors|editors|keywords">
-    <xsl:value-of select="concat(local:quote(local-name()), ': [')"/>
+    <xsl:value-of select="concat(local:keyify(local-name()), ' [')"/>
     <xsl:apply-templates/>
     <xsl:text>]</xsl:text>
-    <xsl:if test="following-sibling::authors or following-sibling::editors">,</xsl:if>
   </xsl:template>
 
   <xsl:template match="name|word">
     <xsl:value-of select="local:quote(.)"/>
-    <xsl:if test="following-sibling::*">,</xsl:if>
   </xsl:template>
   
-  <xsl:template match="title|edition">
-    <xsl:value-of select="concat(local:quote(local-name()), ': ')"/>
-    <xsl:value-of select="local:quote(.)"/>
+  <xsl:template match="title|edition|language|publisher|date|pages|url|enum|snum|no|name[parent::container]">
+    <xsl:value-of select="concat(local:keyify(local-name()), local:quote(.))"/>
   </xsl:template>
   
-
+  <xsl:template match="physicalObject|container">
+    <xsl:value-of select="concat(local:keyify(local-name()), ' {')"/>
+    <xsl:apply-templates select="*|@type"/>
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+  
+  <xsl:template match="@type">
+    <xsl:value-of select="concat(local:keyify('type'), '&quot;', current(), '&quot;,')"/>
+  </xsl:template>
+  
+  <xsl:function name="local:keyify" as="xs:string">
+    <xsl:param name="key-name" as="xs:string"/>
+    <xsl:value-of select="concat(local:quote($key-name), ': ')"/>
+  </xsl:function>
 
   <xsl:function name="local:quote" as="xs:string">
-    <xsl:param name="val"/>
+    <xsl:param name="val" as="xs:string"/>
     <xsl:value-of select="concat('&quot;', normalize-space(local:escape-quotes($val)), '&quot;')"/>
   </xsl:function>
 
   <xsl:function name="local:escape-quotes" as="xs:string">
-    <xsl:param name="val"/>
+    <xsl:param name="val" as="xs:string"/>
     <xsl:value-of select="replace($val, '&quot;', '\\&quot;')"/>
   </xsl:function>
 
